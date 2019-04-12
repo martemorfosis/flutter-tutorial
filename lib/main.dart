@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Startup Name Generator',
       theme: ThemeData(
-        primarySwatch: Colors.orange,
+        primaryColor: Colors.lime,
       ),
       home: RandomWords(),
     );
@@ -23,20 +23,28 @@ class MyApp extends StatelessWidget {
 // Builds the list and generates the Random Words
 
 class RandomWordsState extends State<RandomWords> {
+
   final _suggestions = <WordPair>[];
+  final Set<WordPair> _saved = Set<WordPair>();
   final _biggerFont = const TextStyle(fontSize: 18.0);
+
+  // Main app scaffold / layout
 
   @override
   Widget build(BuildContext context){
     return Scaffold(
       appBar: AppBar(
         title: Text('Startup Name Generator'),
+        actions: <Widget>[
+          IconButton(icon: Icon(Icons.list), onPressed: _pushSaved),
+        ],
       ),
       body: _buildSuggestions()
     );
   }
 
 
+  // List builder
   Widget _buildSuggestions() {
     return ListView.builder(itemBuilder: (context, i) {
       if (i.isOdd) return Divider();
@@ -53,11 +61,58 @@ class RandomWordsState extends State<RandomWords> {
   }
 
 
+  // Row builder
   Widget _buildRow(WordPair pair) {
+
+    final bool alreadySaved = _saved.contains(pair);
+
     return ListTile(
       title: Text(
         pair.asPascalCase.split(new RegExp(r"(?=[A-Z])")).join(' '),
         style: _biggerFont
+      ),
+      trailing: Icon(
+        alreadySaved ? Icons.star : Icons.star_border,
+        color: alreadySaved ? Colors.amber : null
+      ),
+      onTap: () {
+        setState(() {
+          if (alreadySaved) {
+            _saved.remove(pair);
+          } else {
+            _saved.add(pair);
+          }
+        });
+      }
+    );
+  }
+
+  void _pushSaved() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+
+       builder: (BuildContext context) {
+
+         final Iterable<ListTile> tiles = _saved.map(
+             (WordPair pair) {
+               return ListTile(
+                 title: Text(
+                     pair.asPascalCase.split(new RegExp(r"(?=[A-Z])")).join(' '),
+                     style: _biggerFont
+                 ),
+               );
+             },
+         );
+
+         final List<Widget> divided = ListTile.divideTiles(tiles: tiles, context: context).toList();
+
+         return Scaffold(
+           appBar: AppBar(
+             title: Text('Saved Suggestions'),
+           ),
+           body: ListView(children: divided,)
+         );
+       }
       )
     );
   }
@@ -65,7 +120,7 @@ class RandomWordsState extends State<RandomWords> {
 }
 
 
-// Calls the class that builds the list that generates the words
+// Calls the class that builds the list view
 
 class RandomWords extends StatefulWidget {
   @override
